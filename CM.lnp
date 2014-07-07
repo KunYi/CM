@@ -1,0 +1,4 @@
+"cm.obj" 
+TO "CM" REGFILE (.\CM.ORC) 
+IXREF 
+XDATA( 0XE000-0XFFFF )
