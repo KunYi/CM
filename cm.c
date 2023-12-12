@@ -8,10 +8,10 @@
  * Modification:                                    *
  * Developer Platform : Keil C v6.2x                *
  * ------------------------------------------------ */
- 
+
 Byte bdata   _BitsArray;
 Byte bdata   _PulsePortMask;
-/* Direction of PID port                    */ 
+/* Direction of PID port                    */
 sbit PORTA_DIR      = _BitsArray^3;
 sbit PORTB_DIR      = _BitsArray^2;
 sbit PORTCH_DIR     = _BitsArray^1;
@@ -21,7 +21,7 @@ sbit _bRcvOK        = _BitsArray^4;
 sbit _bNowPulse     = _BitsArray^5;
 sbit _bAIO_WatchDog = _BitsArray^6;
 /* Pulse of PID port                        */
-sbit _bPulseOfPA    = _PulsePortMask ^ 3;  
+sbit _bPulseOfPA    = _PulsePortMask ^ 3;
 sbit _bPulseOfPB    = _PulsePortMask ^ 2;
 sbit _bPulseOfPCH   = _PulsePortMask ^ 1;
 sbit _bPulseOfPCL   = _PulsePortMask ^ 0;
@@ -38,7 +38,7 @@ Byte data  _TimerCount;
 Word data  _10SCount;
 Byte data  _AIOCount;
 /* 9Hz = 11.1ms                             */
-#define AIOOneCycle      11 
+#define AIOOneCycle      11
 #define AIOWDLength    1000
 /* PID output bufffer                       */
 Byte data  _PortABuff, _PortBBuff, _PortCBuff;
@@ -49,7 +49,7 @@ Byte data  _PulseCount;
 /* Pulse width                              */
 Byte data  _PulseWidth;
 
-/* declear network fifo(circle quene)       */         
+/* declear network fifo(circle quene)       */
 CreateQue(_RxQue)
 CreateQue(_TxQue)
 /* Implement opration function              */
@@ -60,25 +60,25 @@ void main(void)
 {
   Initialization();
 
-    
+
   while(1)
   {
    /* Reset watchdog timer  */
    WATCH_DOG = ~WATCH_DOG;
    /* get controller module ID */
    GetID();
-   
+
    /* recvice packet        */
    if (GetQueLen(_RxQue) > 0)
      DeCommand();
 
    /* Process host command  */
-   if (_bRcvOK) 
-   { 
+   if (_bRcvOK)
+   {
       _bRcvOK = FALSE;
 	  DispatchCMD();
    }
-   
+
    /* Process pulse        */
    if (_bNowPulse)
    {
@@ -88,13 +88,13 @@ void main(void)
 	   _bNowPulse = FALSE;
 	}
    }
-   
+
    /* Process AIO pulse       */
    if (_bAIO_WatchDog)
    {
      if ((Byte)(AIOOneCycle + _AIOCount) == _TimerCount)
 	 {
-       /* should check PID_C directional        
+       /* should check PID_C directional
 	      but old CM no check            */
 	   _AIOCount = _TimerCount;
 
@@ -106,17 +106,17 @@ void main(void)
      }
 
      if (_10SCount >= AIOWDLength)
-	 { 
+	 {
 	   _bAIO_WatchDog = FALSE;
        /* disable AIO watch dog then
 	      must be clear PID_C bit 7 */
 	   _PortCBuff &= 0x7F;
 	 }
-	  
+
      PID_C = _PortCBuff;
-	 
+
    } /* end of if(_bAIO_WatchDog) */
-  
+
   } /* main loop */
 }
 
@@ -125,7 +125,7 @@ void main(void)
  * Parameter: void                                     *
  * result   : void                                     *
  * descript : initial system                           *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void Initialization(void)
 {
   WATCH_DOG = ~WATCH_DOG;
@@ -141,7 +141,7 @@ void Initialization(void)
   _RcvState = WAIT_SOH;
 
   WATCH_DOG = ~WATCH_DOG;
-  
+
   /* getting control module ID and PID port directional */
   GetDirSW();
   SettingPID();
@@ -183,7 +183,7 @@ void Initialization(void)
  * Parameter: void                                     *
  * result   : void                                     *
  * descript : get DIP switch setting for CM ID         *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void GetID(void)
 {
   MUXSEL = ID_SEL;
@@ -196,7 +196,7 @@ void GetID(void)
  * result   : void                                     *
  * descript : get DIP switch setting for PID port      *
  *            directional                              *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void GetDirSW(void)
 {
   MUXSEL = DIR_SEL;
@@ -209,16 +209,16 @@ void GetDirSW(void)
  * Parameter: void                                     *
  * result   : void                                     *
  * descript : Setting PID port directional             *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void SettingPID(void)
 {
   Byte Ctrl = 0x80;
- 
+
   if (PORTA_DIR == DIRWITHIN) Ctrl |= 0x10;
   if (PORTB_DIR == DIRWITHIN) Ctrl |= 0x02;
   if (PORTCH_DIR == DIRWITHIN) Ctrl |= 0x08;
   if (PORTCL_DIR == DIRWITHIN) Ctrl |= 0x01;
-  
+
   PID_CTRL = Ctrl;
 }
 
@@ -227,14 +227,14 @@ void SettingPID(void)
  * Parameter: cmd, val, opt                            *
  * result   : void                                     *
  * descript : process cmd and dispatch                 *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void DispatchCMD(void)
 {
   Byte ReCode = CONFIRMOK;
 
   switch (_RcvCMD)
   {
-   case CMD_DIRECTION: 
+   case CMD_DIRECTION:
    /* Setting PID port direction */
         switch (_RcvVAL)
         {
@@ -273,7 +273,7 @@ void DispatchCMD(void)
 				    PORTCH_DIR = DIRWITHIN;
               	    break;
               	case SET_OUTPUT:
-				    PORTCH_DIR = DIRWITHOUT; 
+				    PORTCH_DIR = DIRWITHOUT;
               	    break;
               	default:
                     goto DIRSUBERR;
@@ -304,7 +304,7 @@ DIRSUBERR:
           SettingPID();
         break;
    /* End CMD_DIRECTION case     */
-   
+
    case CMD_READ:
    /* Reading PID port value     */
         switch (_RcvVAL)
@@ -324,7 +324,7 @@ DIRSUBERR:
 			     _TxVAL = PID_B;
 	             ReCode = RETURNVALUE;
 			  }
-              else			    
+              else
 			     ReCode = RDDIRERR;
               break;
          case PORT_CH:
@@ -333,7 +333,7 @@ DIRSUBERR:
 			     _TxVAL = (PID_C >> 4);
 	             ReCode = RETURNVALUE;
 			  }
-              else			    
+              else
 			     ReCode = RDDIRERR;
               break;
          case PORT_CL:
@@ -342,7 +342,7 @@ DIRSUBERR:
 			     _TxVAL = PID_C & 0x0F;
 	             ReCode = RETURNVALUE;
 			  }
-              else			    
+              else
 			     ReCode = RDDIRERR;
               break;
          case DIRECTION_STATE:
@@ -354,10 +354,10 @@ DIRSUBERR:
  		      ReCode = RDSUBCMDERR;
 		      break;
         }
-        
+
         break;
    /* End CMD_READ case          */
-   
+
    case CMD_WRITE:
    /* Reading PID port value     */
         switch (_RcvVAL)
@@ -369,7 +369,7 @@ DIRSUBERR:
 			     PID_A = _RcvOPT;
 			  }
 		      else
-                ReCode = WRDIRERR;			  
+                ReCode = WRDIRERR;
               break;
          case PORT_B:
               if (PORTB_DIR == DIRWITHOUT)
@@ -378,7 +378,7 @@ DIRSUBERR:
 			     PID_B = _RcvOPT;
 			  }
 		      else
-                ReCode = WRDIRERR;			  
+                ReCode = WRDIRERR;
               break;
          case PORT_CH:
               if (PORTCH_DIR == DIRWITHOUT)
@@ -388,7 +388,7 @@ DIRSUBERR:
 			     PID_C = _PortCBuff;
 			  }
 		      else
-                ReCode = WRDIRERR;			  
+                ReCode = WRDIRERR;
               break;
          case PORT_CL:
               if (PORTCL_DIR == DIRWITHOUT)
@@ -398,7 +398,7 @@ DIRSUBERR:
 			    PID_C = _PortCBuff;
 			  }
 		      else
-                ReCode = WRDIRERR;			  
+                ReCode = WRDIRERR;
               break;
          case DIRECTION_STATE:
 		      /* Setting directional of all port */
@@ -410,12 +410,12 @@ DIRSUBERR:
 		      ReCode = WRSUBCMDERR;
 		      break;
         }
-        
+
         break;
    /* End CMD_WRITE case         */
-   
+
    case CMD_PULSE:
-   /* Port 'val' generation pulse 
+   /* Port 'val' generation pulse
            with (opt*10ms) width */
         if (!_bNowPulse)
         {
@@ -486,8 +486,8 @@ DIRSUBERR:
         if (ReCode == CONFIRMOK)
 		  _PulseCount = _TimerCount;
         break;
-   /* End CMD_PULSE case         */ 
-   
+   /* End CMD_PULSE case         */
+
    case CMD_TERM:
    /* setting a pulse width      */
 
@@ -497,12 +497,12 @@ DIRSUBERR:
 	  else
 	    ReCode = FAILPULSECMD ;
       break;
-        
-   /* End CMD_TEST case          */ 
+
+   /* End CMD_TEST case          */
 
    case CMD_AIOWATCHDOG:
-   /* CM use bit 7 of PID port C 
-      generation 10Hz signal and 
+   /* CM use bit 7 of PID port C
+      generation 10Hz signal and
 	  length 10sec               */
 	  if (_RcvVAL == 'N') _AIOCount = _TimerCount;
       _bAIO_WatchDog = TRUE;
@@ -571,11 +571,11 @@ void GeneraltionPulse(void)
  * Parameter: cmd                                      *
  * result   : parameter number                         *
  * descript : get CMD parameter number                 *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 Byte GetParameterLen(Byte cmd)
 {
   register Byte result = 0;
- 
+
   switch (cmd) {
   case CMD_DIRECTION:
   case CMD_WRITE:
@@ -590,13 +590,13 @@ Byte GetParameterLen(Byte cmd)
   }
   return result;
 /*
-  Byte code CMD_TBL[] = 
-         { CMD_DIRECTION, CMD_READ, CMD_WRITE, 
+  Byte code CMD_TBL[] =
+         { CMD_DIRECTION, CMD_READ, CMD_WRITE,
 	       CMD_PULSE, CMD_TERM, CMD_AIOWATCHDOG };
-  Byte code CMD_LEN[(sizeof(CMD_TBL)/sizeof(Byte))] = 
+  Byte code CMD_LEN[(sizeof(CMD_TBL)/sizeof(Byte))] =
 	     { 2, 1, 2, 2, 1, 1 };
   Byte i;
- 
+
   for( i = 0; i < (sizeof(CMD_TBL)/sizeof(Byte)); i++)
      if (CMD_TBL[i] == cmd) return CMD_LEN[i];
   return 0;
@@ -608,7 +608,7 @@ Byte GetParameterLen(Byte cmd)
  * Parameter: typed                                    *
  * result   : null                                     *
  * descript : reply master command                     *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void ReplyCMD(Byte typed)
 {
   Byte Cmd, Val;
@@ -642,7 +642,7 @@ void ReplyCMD(Byte typed)
 		Val = 'R';
 		break;
   }
-  
+
   Chk = MASTERID;
   Chk ^= Val;
   Chk ^= Cmd;
@@ -662,7 +662,7 @@ void ReplyCMD(Byte typed)
  * result   : null                                     *
  * descript : UART event interrupter, it using 2 of    *
  *            Register Bank                            *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void UART_INT(void) interrupt 4 using 2
 {
   Byte tmp;
@@ -692,8 +692,8 @@ void UART_INT(void) interrupt 4 using 2
 		SCON = 0xF0; /* switch to 9bits mode */
 	  }
     SBUF = tmp;
-	} 
-	else 
+	}
+	else
 	{
 	   // Tx queue is empty
 	   // re-switch 8bits format and chage to receiver
@@ -710,7 +710,7 @@ void UART_INT(void) interrupt 4 using 2
  * descript : timer0 event interrupter, it using 2 of  *
  *            Register Bank,Timer 0 is Mode 1, adjust  *
  *            10ms length                              *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void TIMER0_INT(void) interrupt 1 using 2
 {
   TH0 = TIMER0H;
@@ -726,7 +726,7 @@ void TIMER0_INT(void) interrupt 1 using 2
  * result   : null                                     *
  * descript : check correct packet of recvice stream   *
  *            and decode it to command type            *
- * --------------------------------------------------- */ 
+ * --------------------------------------------------- */
 void DeCommand(void)
 {
  static Byte RcvCHK;
@@ -740,8 +740,8 @@ void DeCommand(void)
 	switch (_RcvState)
 	{
 	 case WAIT_SOH:
-	      if (tmp == SOH) 
-		  {  
+	      if (tmp == SOH)
+		  {
 		    _RcvState = RCV_ID;
 			_RcvCMD = 0;
 		  }
@@ -785,14 +785,14 @@ void DeCommand(void)
 
 	 case RCV_CHK:
 	      /* _RcvID equal zero nothing */
-		  /* because it be MasterID    */ 
-		  if ((tmp == RcvCHK) && (_SelfID == _RcvID) && (_RcvID != 0)) 
+		  /* because it be MasterID    */
+		  if ((tmp == RcvCHK) && (_SelfID == _RcvID) && (_RcvID != 0))
 		     _bRcvOK = TRUE;
 
  	 default:
 	      _RcvState = WAIT_SOH;
 		  break;
 	}
-  } 
+  }
 }
 

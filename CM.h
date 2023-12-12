@@ -33,7 +33,7 @@
 #define  PID_B           (XBYTE[PID_BASE+1])
 #define  PID_C           (XBYTE[PID_BASE+2])
 #define  PID_CTRL        (XBYTE[PID_BASE+3])
- 
+
 /* ------------------------------------------------ *
  * Pin assign                                       *
  * DIP_SW   use Port1                               *
@@ -48,13 +48,13 @@ sbit UART_DIR = P3^4;
 sbit WATCH_DOG = P3^5;
 
 /* PID 8255 CTL(controll) register attrib           */
-#define  PID_AIN        (0x90)    /* 10010000B bit4 */ 
+#define  PID_AIN        (0x90)    /* 10010000B bit4 */
 #define  PID_AOUT       (0x80)    /* 10000000B      */
 #define  PID_BIN        (0x82)    /* 10000010B bit1 */
 #define  PID_BOUT       (0X80)    /* 10000000B      */
 #define  PID_CHIN       (0X88)    /* 10001000B bit3 */
 #define  PID_CHOUT      (0X80)    /* 10000000B      */
-#define  PID_CLIN       (0x81)    /* 10000001B bit0 */ 
+#define  PID_CLIN       (0x81)    /* 10000001B bit0 */
 #define  PID_CLOUT      (0x80)    /* 10000000B      */
 /* Directional mode                                 */
 #define  DIRWITHIN         1      /* Dir with in    */
@@ -84,7 +84,7 @@ sbit WATCH_DOG = P3^5;
  * character 'T': pulse width parameter             *
  * character 'S': send a 9HZ, CM self produce,      *
  * ------------------------------------------------ */
- 
+
  /* <CMD> defined                                   */
 #define CMD_DIRECTION        ('D')
 #define CMD_READ             ('R')
@@ -109,11 +109,11 @@ sbit WATCH_DOG = P3^5;
 /* defined customer data type                       */
 typedef enum { WAIT_SOH,     /* wait SOH      */
                RCV_ID,       /* get module ID */
-			   RCV_CMD,      /* get command   */
+	       RCV_CMD,      /* get command   */
                RCV_VAL,      /* get value     */
-			   RCV_OPT,      /* get optional  */
-			   RCV_CHK       /* get checksum  */
-			 } RcvPacketState;
+	       RCV_OPT,      /* get optional  */
+	       RCV_CHK       /* get checksum  */
+} RcvPacketState;
 
 typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 typedef enum { RX_DIR = 0, TX_DIR  = 1 } UartDir;
@@ -124,14 +124,15 @@ typedef unsigned short  Word;
 typedef Word *   PWord;
 
 
-typedef struct {  Byte QueH; 
+typedef struct {  Byte QueH;
                   Byte QueT;
-				  Byte QueLen; } QueCtrl;
+		  Byte QueLen;
+} QueCtrl;
 
 /* functions declarative                            */
 void Initialization(void);
 void GeneraltionPulse(void);
-Byte GetParameterLen(Byte cmd); 
+Byte GetParameterLen(Byte cmd);
 void DeCommand(void);
 void ReplyCMD(Byte typed);
 void DispatchCMD(void);
@@ -149,34 +150,34 @@ void TIMER0_INT(void);
 
 #define CreateQue(x)        Byte xdata x[MaxQueLen];                          \
                             QueCtrl data x##C;                                \
-							Boolean _PutTo##x(Byte Val);                      \
-							Boolean _GetFrom##x(PByte Val);
-                              
+			    Boolean _PutTo##x(Byte Val);                      \
+			    Boolean _GetFrom##x(PByte Val);
+
 #define ImplementQue(x)     Boolean _PutTo##x(Byte Val)                       \
                             {                                                 \
-							 ES = FALSE;                                      \
+			     ES = FALSE;                                      \
                              if (IsFullOfQue(x))                              \
-							 { ES = TRUE; return FALSE; }                     \
-							 x##C.QueLen++;                                   \
+			       { ES = TRUE; return FALSE; }                   \
+			     x##C.QueLen++;                                   \
                              x[x##C.QueT++] = Val;                            \
-							                                                  \
+			                                                      \
                              if(x##C.QueT >= MaxQueLen) x##C.QueT = 0;        \
-							 ES = TRUE;                                       \
+			     ES = TRUE;                                       \
                              return TRUE;                                     \
                             }                                                 \
                                                                               \
                             Boolean _GetFrom##x(PByte Val)                    \
                             {                                                 \
-							 ES = FALSE;                                      \
-							 if (IsEmptyOfQue(x))                             \
-						       { ES = TRUE; return FALSE; }                   \
-							 *Val = x[x##C.QueH++];                           \
-					         x##C.QueLen--;                                   \
-							 if(x##C.QueH >= MaxQueLen) x##C.QueH = 0;        \
-							 ES = TRUE;                                       \
-							 return TRUE;                                     \
-							}                                                     
-							                                                       
+			     ES = FALSE;                                      \
+			     if (IsEmptyOfQue(x))                             \
+			       { ES = TRUE; return FALSE; }                   \
+			     *Val = x[x##C.QueH++];                           \
+			     x##C.QueLen--;                                   \
+			     if(x##C.QueH >= MaxQueLen) x##C.QueH = 0;        \
+			     ES = TRUE;                                       \
+			     return TRUE;                                     \
+			    }
+
 #define InitialQue(x)   x##C.QueH = x##C.QueT = x##C.QueLen = 0
 #define IsEmptyOfQue(x) (x##C.QueLen == 0) ? TRUE:FALSE
 #define IsFullOfQue(x)  (x##C.QueLen >= MaxQueLen) ? TRUE:FALSE
